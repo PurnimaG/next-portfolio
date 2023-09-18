@@ -1,5 +1,5 @@
 import logo from './images/logo.png';
-import profileImage from './images/profile.JPG'
+import profileImage from './images/profileImage.png'
 import HTML from './images/html.png';
 import CSS from './images/css.png';
 import JavaScript from './images/javascript.png';
