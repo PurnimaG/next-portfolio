@@ -93,5 +93,44 @@ export const data = {
                 }
             ]
         }
+    ],
+    projects: [
+        {
+            name: "Real Estate",
+            description: "A full stack and fully responsive Real estate website, A full stack and fully responsive Real estate websiteA ",
+            tech: [ "React.js" , "Express.js", "TailwindCSS"],
+            link: "https://realestate-fullstack-mern-a7ftnzqq6-purnimag.vercel.app/"
+            
+        },
+        {
+            name: "Singapore Exchange",
+            description: "The Singapore Exchange (SGX) website, serves as the official online platform for the Singapore Exchange Limited.",
+            tech: [ "Drupal CMS" , "GraphQL"],
+            link: "https://www.sgx.com/"
+        },
+        {
+            name: "TC19",
+            description: "An event management hybrid application for iOS and Android. Provide admin to create, edit and delete event, polling. Involved in both back-end and front-end.",
+            tech: [ "ReactJS" , "Strapi", "GraphQL"],
+            link: ""
+        },
+        {
+            name: "Mi3",
+            description: "Mi3 is a journilism website and provide information to public via posdcasta and articles.",
+            tech: [ "Drupal" , "MySql", "Twig"],
+            link: "https://www.mi-3.com.au/"
+        },
+        {
+            name: "MB ages",
+            description: "Multilingual Website for life insurance company based in Vietnam",
+            tech: [ "Drupal" , "MySql", "Twig"],
+            link: "https://mbageas.life/"
+        },
+        {
+            name: "Standard Chartered Public website",
+            description: "A business banking and corporate banking module for their variety of credit cards and other products such as travel cards, meal cards, etc.",
+            tech: [ "Wordpress" , "SEO"],
+            link: "https://www.sc.com/"
+        }
     ]
 }

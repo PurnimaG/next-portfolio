@@ -18,7 +18,7 @@ const Experience = () => {
         id="experience"
         className=' max-w-containerSmall mx-auto py-10 lgl:py-24 px-4'>
         <SectionTitle title='Experience' num="02" />
-        <div className='w-full mt-10 flex flex-col md:flex-row gap-16'>
+        <div className='w-full mt-10  flex flex-col md:flex-row gap-16'>
         <Tabs value={activeTab} orientation="vertical" >
                     <TabsHeader
                         className="rounded-none border-blue-gray-50 bg-transparent p-0 w-[250px]"

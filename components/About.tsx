@@ -12,9 +12,22 @@ const About = () => {
         <SectionTitle title="About Me" num="01" />
         <div className="flex flex-col lgl:flex-row gap-16">
             <div className="w-full lgl:w-2/3 text-base text-textDark font-medium flex flex-col gap-4">
+                <h3 className='text-lg font-titleFont tracking-wide text-textGreen'> Hello, I'm Purnima,</h3>
                 <p>
-                I am a web developer with 4+ years of experience in React. I have a strong foundation in front-end & back-end development and am skilled in creating user-friendly and responsive web applications using React and its ecosystem. {" "}
+                    A React web developer with a passion for crafting seamless online experiences. 👨‍💻
                 </p>
+
+                <h3 className='text-lg font-titleFont tracking-wide text-textGreen'> What I Do:</h3>
+
+                <p>
+                I specialize in building modern web applications using React, the powerhouse of interactive user interfaces. From concept to deployment, I thrive on turning ideas into elegant and responsive web solutions.
+                </p>
+
+                <h3 className='text-lg font-titleFont tracking-wide text-textGreen'> Why Me:</h3>
+                <p>
+                With a keen eye for design and a commitment to performance, I take pride in creating web applications that not only look great but also provide a top-notch user experience.
+                </p>
+
                 <p>
                     Here are few technologies I have worked recently
                 </p>

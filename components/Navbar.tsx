@@ -64,18 +64,25 @@ const Navbar = () => {
                             transition={{ duration: 0.1, delay: 0.2 }}
                         >Experience</motion.li>
                     </Link>
-                    <Link href="#projects" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
+                    <Link href="#skills" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                         <motion.li 
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.1, delay: 0.3 }}
+                        >Skills</motion.li>
+                    </Link>
+                    <Link href="#projects" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
+                        <motion.li 
+                            initial={{ y: -10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.1, delay: 0.4 }}
                         >Project</motion.li>
                     </Link>
                     <Link href="#contact" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                         <motion.li 
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 0.1, delay: 0.4 }}
+                            transition={{ duration: 0.1, delay: 0.5 }}
                         >Contact</motion.li>
                     </Link>
                 </ul>
@@ -83,7 +90,7 @@ const Navbar = () => {
                     <motion.button 
                         initial={{opacity: 0}}
                         animate={{opacity: 1}}
-                        transition={{delay: 0.5}}
+                        transition={{delay: 0.6}}
                         className="px-4 py-2 rounded-md text-textGreen text-[13px] border border-textGreen hover:bg-hoverColor duration-300" 
                     >Resume</motion.button>
                 </a>
@@ -134,18 +141,25 @@ const Navbar = () => {
                                         transition={{ duration: 0.2, delay: 0.3, ease: "easeIn" }}
                                     >Experience</motion.li>
                                 </Link>
+                                <Link href="#skills" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
+                                    <motion.li 
+                                        initial={{ y: 20, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        transition={{ duration: 0.2, delay: 0.4, ease: "easeIn" }}
+                                    >Skills</motion.li>
+                                </Link>
                                 <Link href="#projects" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                                     <motion.li 
                                        initial={{ y: 20, opacity: 0 }}
                                        animate={{ y: 0, opacity: 1 }}
-                                       transition={{ duration: 0.2, delay: 0.4, ease: "easeIn" }}
+                                       transition={{ duration: 0.2, delay: 0.5, ease: "easeIn" }}
                                     >Project</motion.li>
                                 </Link>
                                 <Link href="#contact" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                                     <motion.li 
                                         initial={{ y: 20, opacity: 0 }}
                                         animate={{ y: 0, opacity: 1 }}
-                                        transition={{ duration: 0.2, delay: 0.5, ease: "easeIn" }}
+                                        transition={{ duration: 0.2, delay: 0.6, ease: "easeIn" }}
                                     >Contact</motion.li>
                                 </Link>
                             </ul>
@@ -153,7 +167,7 @@ const Navbar = () => {
                                 <motion.button 
                                     initial={{ y: 20, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
-                                    transition={{ duration: 0.2, delay: 0.6, ease: "easeIn" }}
+                                    transition={{ duration: 0.2, delay: 0.7, ease: "easeIn" }}
                                     className=" w-32 h-10 rounded-md text-textGreen text-[13px] border border-textGreen hover:bg-hoverColor duration:300" 
                                 >Resume</motion.button>
                             </a>
