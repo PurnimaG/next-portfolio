@@ -44,7 +44,7 @@ const Banner = () => {
             animate={{ y:0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.8 }}
             className='text-base md:max-w-[650px] text-textDark font-medium'>
-            {" "}I am a web developer with 4+ years of experience in React. I have a strong foundation in front-end & back-end development and am skilled in creating user-friendly and responsive web applications using React and its ecosystem. {" "}
+            {" "}Passionate about creating captivating user interfaces and seamless web experiences. I specialize in crafting visually stunning and responsive websites. With a commitment to clean code and a user-centric approach, I transform ideas into interactive digital realities that engage and delight users.{" "}
             
         </motion.p>
         <Link href="#projects" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">

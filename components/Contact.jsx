@@ -6,7 +6,7 @@ const Contact = () => {
    <section 
     id="contact" 
     className=" max-w-containerSmall mx-auto py-10 mdl:py-24 flex flex-col gap-4 lgl:gap-8 mdl:px-10 xl:px-4">
-    <SectionTitle title="What's next?" num="04" />
+    <SectionTitle title="What's next?" num="05" />
     <h2 className='font-titleFont text-textGreen text-4xl font-semiBold text-center'> Send me a message!</h2>
     <p className='text-center text-textDark'>Got a question or proposal, or just want to say hello? Go ahead.</p>
     <div name="contact" className='w-full bg-[#0a192f] text-gray-300 flex justify-center items-center p-4'>

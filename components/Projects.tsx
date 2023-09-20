@@ -7,8 +7,8 @@ import { data } from '../data';
 
 const Projects = () => {
   return (
-    <section id="projects" className='max-w-containerSmall mx-auto py-10 lgl:py-24 px-4'>
-      <SectionTitle title="Some Things I have Built" num="03" />
+    <section id="projects" className=' max-w-containerSmall mx-auto py-10 mdl:py-24 flex flex-col gap-4 lgl:gap-8 mdl:px-10 xl:px-4'>
+      <SectionTitle title="Some Things I have Built" num="04" />
     <div className='grid grid-cols-1 md:grid-cols-3 xl-grid-cols-3 gap-6 mt-10 lgl:px-10 '>
         
             {

@@ -55,35 +55,35 @@ const Navbar = () => {
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.1, delay: 0.1 }}
-                        >About</motion.li>
+                        ><span className='text-textGreen'>01. {" "}</span>About</motion.li>
                     </Link>
                     <Link href="#experience" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                         <motion.li 
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.1, delay: 0.2 }}
-                        >Experience</motion.li>
+                        ><span className='text-textGreen'>02. {" "}</span>Experience</motion.li>
                     </Link>
                     <Link href="#skills" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                         <motion.li 
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.1, delay: 0.3 }}
-                        >Skills</motion.li>
+                        ><span className='text-textGreen'>03. {" "}</span>Skills</motion.li>
                     </Link>
                     <Link href="#projects" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                         <motion.li 
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.1, delay: 0.4 }}
-                        >Project</motion.li>
+                        > <span className='text-textGreen'>04. {" "}</span>Project</motion.li>
                     </Link>
                     <Link href="#contact" onClick={handleScroll} className="flex text-center gap-1 font-medium text-textDark hover:text-textGreen cursor-pointer duration-300 nav-link">
                         <motion.li 
                             initial={{ y: -10, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ duration: 0.1, delay: 0.5 }}
-                        >Contact</motion.li>
+                        > <span className='text-textGreen'>05. {" "}</span>Contact</motion.li>
                     </Link>
                 </ul>
                 <a href='/assets/Purnima_resume.pdf' target="_blank">

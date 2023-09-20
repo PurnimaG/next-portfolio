@@ -9,3 +9,8 @@
 .active {
     color: #64ffda;
 }
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--secondary) var(--primary);
+  }
