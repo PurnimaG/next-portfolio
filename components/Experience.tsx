@@ -14,7 +14,7 @@ import { useMediaQuery } from '@mui/material';
 
 const Experience = () => {
     const [activeTab, setActiveTab ] =  useState('Amaris');
-    const smallScreen = useMediaQuery("(max-width: 400px)");
+    const smallScreen = useMediaQuery("(max-width: 540px)");
   return (
     <section 
         id="experience"
