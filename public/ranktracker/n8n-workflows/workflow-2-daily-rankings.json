@@ -1,0 +1,156 @@
+{
+  "name": "RankTracker — 2. Daily Ranking Check",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * *" }]
+        }
+      },
+      "id": "cron-node",
+      "name": "Every day at 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, client_name, domain, keywords, country, engine FROM clients WHERE active = true ORDER BY id;",
+        "options": {}
+      },
+      "id": "fetch-clients",
+      "name": "Fetch all active clients",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Expand JSONB keywords array so each keyword becomes its own item\nconst items = [];\nfor (const client of $input.all()) {\n  const { id, client_name, domain, keywords, country, engine } = client.json;\n  const kwList = Array.isArray(keywords) ? keywords : JSON.parse(keywords);\n  for (const keyword of kwList) {\n    items.push({\n      json: { client_id: id, client_name, domain, keyword, country, engine }\n    });\n  }\n}\nreturn items;"
+      },
+      "id": "split-keywords",
+      "name": "Split into one item per keyword",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.dataforseo.com/v3/serp/google/organic/live/advanced",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=",
+              "value": "=[{ \"keyword\": \"{{ $json.keyword }}\", \"location_code\": 2840, \"language_code\": \"en\", \"device\": \"desktop\", \"depth\": 100 }]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "serp-api",
+      "name": "DataForSEO — fetch SERP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300],
+      "notes": "Replace with your preferred SERP API. ValueSERP alternative shown in comments below.\n\nValueSERP alternative URL:\nhttps://api.valueserp.com/search?api_key=YOUR_KEY&q={{ $json.keyword }}&gl={{ $json.country }}&num=100\n\nFor ValueSERP, change HTTP method to GET and remove the body."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract domain rank from DataForSEO response\n// Adjust parsing if using a different SERP API\nconst item = $input.first().json;\nconst clientDomain = item.domain || '';\n\nlet rank = null;\n\ntry {\n  // DataForSEO response structure\n  const results = item.tasks?.[0]?.result?.[0]?.items || [];\n  for (const r of results) {\n    if (r.type === 'organic' && r.url && r.url.includes(clientDomain)) {\n      rank = r.rank_absolute;\n      break;\n    }\n  }\n} catch (e) {\n  // If parsing fails, rank stays null (not found)\n}\n\n/* ValueSERP alternative parsing:\nconst results = item.organic_results || [];\nfor (const r of results) {\n  if (r.link && r.link.includes(clientDomain)) {\n    rank = r.position;\n    break;\n  }\n}\n*/\n\nreturn [{ json: { ...item, rank } }];"
+      },
+      "id": "extract-rank",
+      "name": "Extract rank from response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO rankings (client_id, keyword, rank, checked_at)\nVALUES (\n  {{ $json.client_id }},\n  '{{ $json.keyword }}',\n  {{ $json.rank !== null ? $json.rank : 'NULL' }},\n  CURRENT_DATE\n)\nON CONFLICT (client_id, keyword, checked_at)\nDO UPDATE SET rank = EXCLUDED.rank\nRETURNING id, client_id, keyword, rank, checked_at;",
+        "options": {}
+      },
+      "id": "insert-ranking",
+      "name": "Postgres — INSERT ranking",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate results for the summary email\nconst allItems = $input.all();\nconst improved = allItems.filter(i => i.json.rank && i.json.rank <= 10).length;\nconst total = allItems.length;\nconst date = new Date().toISOString().split('T')[0];\n\nlet tableRows = allItems.map(i => {\n  const r = i.json;\n  return `<tr><td>${r.client_name || ''}</td><td>${r.keyword}</td><td>${r.rank || 'Not found'}</td></tr>`;\n}).join('');\n\nconst html = `\n<h2>RankTracker Daily Report — ${date}</h2>\n<p>Checked <strong>${total}</strong> keywords. <strong>${improved}</strong> ranked in the top 10.</p>\n<table border=\"1\" cellpadding=\"6\" style=\"border-collapse:collapse;font-family:sans-serif;font-size:13px\">\n  <thead><tr><th>Client</th><th>Keyword</th><th>Rank</th></tr></thead>\n  <tbody>${tableRows}</tbody>\n</table>\n`;\n\nreturn [{ json: { html, total, improved, date } }];"
+      },
+      "id": "build-summary",
+      "name": "Build email summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "ranktracker@yourdomain.com",
+        "toEmail": "you@yourdomain.com",
+        "subject": "RankTracker Daily Report — {{ $json.date }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "send-email",
+      "name": "Send daily digest email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1780, 300],
+      "notes": "Optional. Configure SMTP credentials in n8n settings. Remove this node if email summary not needed."
+    }
+  ],
+  "connections": {
+    "Every day at 07:00": {
+      "main": [[{ "node": "Fetch all active clients", "type": "main", "index": 0 }]]
+    },
+    "Fetch all active clients": {
+      "main": [[{ "node": "Split into one item per keyword", "type": "main", "index": 0 }]]
+    },
+    "Split into one item per keyword": {
+      "main": [[{ "node": "DataForSEO — fetch SERP", "type": "main", "index": 0 }]]
+    },
+    "DataForSEO — fetch SERP": {
+      "main": [[{ "node": "Extract rank from response", "type": "main", "index": 0 }]]
+    },
+    "Extract rank from response": {
+      "main": [[{ "node": "Postgres — INSERT ranking", "type": "main", "index": 0 }]]
+    },
+    "Postgres — INSERT ranking": {
+      "main": [[{ "node": "Build email summary", "type": "main", "index": 0 }]]
+    },
+    "Build email summary": {
+      "main": [[{ "node": "Send daily digest email", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Runs every morning at 07:00. Reads all active clients from the DB, checks keyword rankings via DataForSEO, and saves one row per keyword per day into the rankings table. Sends an optional email digest.",
+    "notes": "SETUP:\n1. Create a Postgres credential named 'Supabase Postgres'\n2. Create a DataForSEO (or ValueSERP) HTTP Basic Auth credential\n3. Update the SERP API node with your credential\n4. (Optional) Configure SMTP for the email digest node\n5. Activate the workflow"
+  }
+}

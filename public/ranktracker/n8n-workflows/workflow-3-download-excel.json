@@ -1,0 +1,90 @@
+{
+  "name": "RankTracker — 3. Download Excel",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "download-excel",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-dl",
+      "name": "Webhook — GET /download-excel",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "download-excel"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  c.client_name  AS \"Client\",\n  c.domain       AS \"Domain\",\n  r.keyword      AS \"Keyword\",\n  r.rank         AS \"Rank\",\n  r.checked_at   AS \"Date\"\nFROM rankings r\nJOIN clients c ON c.id = r.client_id\nORDER BY c.client_name, r.keyword, r.checked_at DESC;",
+        "options": {}
+      },
+      "id": "fetch-all",
+      "name": "Postgres — fetch all rankings",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
+        "options": {
+          "fileName": "ranktracker-export.xlsx",
+          "sheetName": "Rankings"
+        }
+      },
+      "id": "to-excel",
+      "name": "Convert to Excel (.xlsx)",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+              { "name": "Content-Disposition", "value": "attachment; filename=\"ranktracker-export.xlsx\"" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "id": "respond-file",
+      "name": "Respond with Excel file",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — GET /download-excel": {
+      "main": [[{ "node": "Postgres — fetch all rankings", "type": "main", "index": 0 }]]
+    },
+    "Postgres — fetch all rankings": {
+      "main": [[{ "node": "Convert to Excel (.xlsx)", "type": "main", "index": 0 }]]
+    },
+    "Convert to Excel (.xlsx)": {
+      "main": [[{ "node": "Respond with Excel file", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Triggered when the user clicks 'Download Excel' in the UI. Joins clients + rankings tables, generates a .xlsx file, and streams it to the browser as a download.",
+    "notes": "SETUP: 1) Activate this workflow. 2) Copy the webhook URL into the frontend config as DOWNLOAD_EXCEL_WEBHOOK."
+  }
+}

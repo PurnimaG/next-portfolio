@@ -1,0 +1,105 @@
+{
+  "name": "RankTracker — 1. Save Client",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "add-client",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "add-client"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate and sanitise incoming form data\nconst body = $input.first().json.body;\n\nconst clientName = (body.client_name || '').trim();\nconst domain = (body.domain || '').trim().toLowerCase().replace(/^https?:\\/\\//, '').replace(/\\/$/, '');\nconst keywords = (body.keywords || []).map(k => k.trim().toLowerCase()).filter(Boolean);\nconst country = (body.country || 'US').trim().toUpperCase();\nconst engine = (body.engine || 'google').trim().toLowerCase();\n\n// Basic validation\nif (!clientName) throw new Error('client_name is required');\nif (!domain) throw new Error('domain is required');\nif (!keywords.length) throw new Error('At least one keyword is required');\n\n// Simple domain format check\nif (!/^[a-z0-9.-]+\\.[a-z]{2,}$/.test(domain)) {\n  throw new Error('Invalid domain format: ' + domain);\n}\n\nreturn [{ json: { clientName, domain, keywords, country, engine } }];"
+      },
+      "id": "validate-node",
+      "name": "Validate & Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clients (client_name, domain, keywords, country, engine)\nVALUES (\n  '{{ $json.clientName }}',\n  '{{ $json.domain }}',\n  '{{ JSON.stringify($json.keywords) }}'::jsonb,\n  '{{ $json.country }}',\n  '{{ $json.engine }}'\n)\nRETURNING id, client_name, domain, created_at;",
+        "options": {}
+      },
+      "id": "postgres-insert",
+      "name": "Postgres — INSERT client",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, client_id: $json.id, client_name: $json.client_name, message: 'Client saved successfully' }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "id": "respond-node",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: $json.message }) }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      },
+      "id": "error-respond",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 480]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Validate & Format", "type": "main", "index": 0 }]]
+    },
+    "Validate & Format": {
+      "main": [[{ "node": "Postgres — INSERT client", "type": "main", "index": 0 }]],
+      "error": [[{ "node": "Respond Error", "type": "main", "index": 0 }]]
+    },
+    "Postgres — INSERT client": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "Receives client data from the RankTracker UI form and saves it to the clients table in PostgreSQL/Supabase.",
+    "notes": "SETUP: 1) Create a Postgres credential named 'Supabase Postgres' pointing to your Supabase DB. 2) Activate this workflow. 3) Copy the webhook URL into the frontend config."
+  }
+}
