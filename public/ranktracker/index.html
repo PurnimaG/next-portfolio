@@ -614,7 +614,7 @@
     </div>
   </div>
 
-  <div class="toolbar">
+  <!-- <div class="toolbar">
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
         <circle cx="6.5" cy="6.5" r="4.5"/>
@@ -622,6 +622,30 @@
       </svg>
       <input class="search-input" id="search-input" placeholder="Search by client name or keyword…" oninput="filterTable()">
     </div>
+    <button class="btn" onclick="loadRankings()" id="refresh-btn">↻ Refresh</button>
+    <button class="btn btn-green" onclick="downloadExcel()" id="download-btn">⬇ Download Excel</button>
+  </div> -->
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="6.5" cy="6.5" r="4.5"/>
+        <path d="M10.5 10.5L14 14" stroke-linecap="round"/>
+      </svg>
+      <input class="search-input" id="search-input"
+        placeholder="Search by client name or keyword…"
+        oninput="filterTable()">
+    </div>
+  
+    <!-- NEW DATE FILTER -->
+    <input
+      type="date"
+      class="form-input"
+      id="date-filter"
+      style="max-width:180px"
+      onchange="filterTable()"
+    >
+  
     <button class="btn" onclick="loadRankings()" id="refresh-btn">↻ Refresh</button>
     <button class="btn btn-green" onclick="downloadExcel()" id="download-btn">⬇ Download Excel</button>
   </div>
@@ -797,6 +821,49 @@
     renderTags();
   }
 
+  function getLatestDate(records) {
+    if (!records.length) return null;
+
+    const dates = records
+      .map(r => r.checked_at)
+      .filter(Boolean)
+      .map(d => d.split('T')[0]) // handles timestamps
+      .sort();
+
+    return dates[dates.length - 1];
+  }
+
+  function applyFilters() {
+
+    const q = document.getElementById('search-input').value.toLowerCase();
+
+    let selectedDate = document.getElementById('date-filter').value;
+
+    // default to latest date if nothing selected
+    if (!selectedDate && allRankings.length) {
+        selectedDate = getLatestDate(allRankings);
+        document.getElementById('date-filter').value = selectedDate;
+    }
+
+    const filtered = allRankings.filter(r => {
+
+      const rowDate = (r.checked_at || '').split('T')[0];
+
+      const matchesSearch =
+        r.client_name.toLowerCase().includes(q) ||
+        r.keyword.toLowerCase().includes(q) ||
+        (r.domain || '').toLowerCase().includes(q);
+
+      const matchesDate =
+        !selectedDate || rowDate === selectedDate;
+
+      return matchesSearch && matchesDate;
+    });
+
+    renderTable(filtered);
+    updateStats(filtered);
+  }
+
   /* ── Load rankings ── */
   let allRankings = [];
 
@@ -835,8 +902,24 @@
 
       console.log("API response:", allRankings);
       console.log("Is array:", Array.isArray(allRankings));
-      renderTable(Array.isArray(allRankings) ? allRankings : [allRankings]);
-      updateStats(allRankings);
+      // renderTable(Array.isArray(allRankings) ? allRankings : [allRankings]);
+      // updateStats(allRankings);
+      allRankings = Array.isArray(allRankings)
+        ? allRankings
+        : [allRankings];
+
+
+      // NEW: Default to latest available ranking date
+      const latestDate = getLatestDate(allRankings);
+
+      if (latestDate) {
+        document.getElementById('date-filter').value = latestDate;
+
+        // update badge to show selected data date
+        document.getElementById('today-date').textContent = latestDate;
+      }
+
+      applyFilters();
     } catch (err) {
       showToast('Could not load rankings — check your webhook URL.', true);
     } finally {
@@ -846,13 +929,14 @@
   }
 
   function filterTable() {
-    const q = document.getElementById('search-input').value.toLowerCase();
-    const filtered = allRankings.filter(r =>
-      r.client_name.toLowerCase().includes(q) ||
-      r.keyword.toLowerCase().includes(q) ||
-      (r.domain || '').toLowerCase().includes(q)
-    );
-    renderTable(filtered);
+    // const q = document.getElementById('search-input').value.toLowerCase();
+    // const filtered = allRankings.filter(r =>
+    //   r.client_name.toLowerCase().includes(q) ||
+    //   r.keyword.toLowerCase().includes(q) ||
+    //   (r.domain || '').toLowerCase().includes(q)
+    // );
+    // renderTable(filtered);
+    applyFilters();
   }
 
   function rankClass(r) {

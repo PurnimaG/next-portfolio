@@ -1,0 +1,843 @@
+{
+  "name": "RankTracker — 3. Download Excel",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST",
+          "OPTIONS"
+        ],
+        "path": "add-client",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ff387c61-bb0f-4733-b00e-8d449897e14f",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        560,
+        32
+      ],
+      "webhookId": "add-client"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Retrieve and validate the required variables from the workflow\n// const client_id = $('Webhook').first().json.client_id;;\n// const keyword = $('Webhook').first().json.keyword;\n// const rank = $('Webhook').first().json.rank;\n\n//const body_info = $input.first().json.body;\n\nconst clientName = $input.first().json.body.client_name;\nconst keywords = $input.first().json.body.keywords;\nconst domain = $input.first().json.body.domain;\nconst country = $input.first().json.body.country;\n\n// Check if any required data is missing\nif (clientName === undefined || keywords === undefined ) {\n  throw new Error('One or more required fields are undefined');\n}\n\n// // Use validated variables in the SQL query\n// const result = await this.pgQuery(`INSERT INTO rankings (client_id, keyword, rank, checked_at) VALUES (${client_id}, '${keyword}', ${rank}, CURRENT_DATE) ON CONFLICT (client_id, keyword, checked_at) DO UPDATE SET rank = EXCLUDED.rank RETURNING id, client_id, keyword, rank, checked_at;`);\n\n// // Validate and sanitize incoming webhook data\n// const rawBody = $input.first().json.body;\n\n// // Parse JSON if body is a string\n// const body = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;\n\n// const clientName = (body.client_name || '').trim();\n// const domain = (body.domain || '').trim().toLowerCase().replace(/^https?:\\/\\//, '').replace(/\\/$/, '');\n// const keywords = Array.isArray(body.keywords) ? body.keywords.map(k => k.trim().toLowerCase()).filter(Boolean) : [];\n// const country = (body.country || 'US').trim().toUpperCase();\n// const engine = (body.engine || 'google').trim().toLowerCase();\n\n// // Basic validation\n// if (!clientName) throw new Error('client_name is required');\n// if (!domain) throw new Error('domain is required');\n// if (!keywords.length) throw new Error('At least one keyword is required');\n\n// // Simple domain format check\n// if (!/^[a-z0-9.-]+\\.[a-z]{2,}$/.test(domain)) {\n//   throw new Error('Invalid domain format: ' + domain);\n// }\n\nreturn [{ json: { clientName, keywords, domain, country } }];"
+      },
+      "id": "e09111af-75ef-453e-8d96-ac9f4f1b084a",
+      "name": "Validate & Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO clients (client_name, domain, keywords, country, engine)\nVALUES (\n  '{{ $json.clientName }}',\n  '{{ $json.domain }}',\n  '{{ JSON.stringify($json.keywords) }}'::jsonb,\n  '{{ $json.country }}',\n  '{{ $json.engine }}'\n)\nRETURNING id, client_name, domain, created_at;",
+        "options": {}
+      },
+      "id": "b6dcfcba-00ad-4d30-961c-512b13b39ff0",
+      "name": "Postgres — INSERT client",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -160
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TX6iPl5TooFkpyYl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, client_id: $json.id, client_name: $json.client_name, message: 'Client saved successfully' }) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "1d5ab0a4-34be-4dc2-8b7f-0184f7d7b0f3",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: $json.message }) }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "ba506030-4858-46a7-af39-296b9de869ae",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "23a40762-b75e-4000-9565-7e3d70004715",
+      "name": "Every day at 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        560,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, client_name, domain, keywords, country, engine FROM clients WHERE active = true ORDER BY id;",
+        "options": {}
+      },
+      "id": "b3361f9e-5b48-47ac-b3b7-43dc6a7d1f58",
+      "name": "Fetch all active clients",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        784,
+        352
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TX6iPl5TooFkpyYl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\n\nfor (const client of $input.all()) {\n  const { id, client_name, domain, keywords, country, engine } = client.json;\n\n  let kwList = [];\n\n  // ✅ ALWAYS treat as string first\n  if (typeof keywords === 'string') {\n    kwList = keywords\n      .split(',')\n      .map(k => k.trim())\n      .filter(Boolean);\n  }\n  // fallback if array ever comes\n  else if (Array.isArray(keywords)) {\n    kwList = keywords;\n  }\n\n  for (const keyword of kwList) {\n    items.push({\n      json: {\n        client_id: id,\n        client_name,\n        domain,\n        keyword,\n        country,\n        engine\n      }\n    });\n  }\n}\n\nreturn items;"
+      },
+      "id": "a72fb9fb-5df6-4520-a5ff-2da9cc2f7f57",
+      "name": "Split into one item per keyword",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "194761ae03f273877975be57eaebee499dc9da68e064a22b92be902bf79200e3"
+            },
+            {
+              "name": "engine",
+              "value": "google"
+            },
+            {
+              "name": "q",
+              "value": "={{$json.keyword}}"
+            },
+            {
+              "name": "location",
+              "value": "Australia"
+            },
+            {
+              "name": "gl",
+              "value": "au"
+            },
+            {
+              "name": "hl",
+              "value": "en"
+            },
+            {
+              "name": "google_domain",
+              "value": "google.com.au"
+            },
+            {
+              "name": "num",
+              "value": "100"
+            },
+            {
+              "name": "no_cache",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "5815807b-c3af-4143-ae85-fd3db7f10b5e",
+      "name": "DataForSEO — fetch SERP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1232,
+        352
+      ],
+      "notes": "Replace with your preferred SERP API. ValueSERP alternative shown in comments below.\n\nValueSERP alternative URL:\nhttps://api.valueserp.com/search?api_key=YOUR_KEY&q={{ $json.keyword }}&gl={{ $json.country }}&num=100\n\nFor ValueSERP, change HTTP method to GET and remove the body."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process ALL input items, not just the first one\nconst results = [];\n\nfor (let idx = 0; idx < $input.all().length; idx++) {\n  const serpResponse = $input.all()[idx].json;\n  \n  // Get the paired keyword data from the split node using the same index\n  const originalData = $('Split into one item per keyword').all()[idx].json;\n\n  const keyword = originalData.keyword;\n  const domain = originalData.domain || '';\n  const client_id = originalData.client_id;\n  const client_name = originalData.client_name;\n  const country = originalData.country;\n  const engine = originalData.engine;\n\n  const organicResults = serpResponse.organic_results || [];\n\n  let rank = null;\n  let rankingUrl = '';\n  let rankingTitle = '';\n\n  const cleanDomain = domain\n    .replace(/^https?:\\/\\//, '')\n    .replace(/^www\\./, '')\n    .toLowerCase();\n\n  for (let i = 0; i < organicResults.length; i++) {\n    const result = organicResults[i];\n    const resultLink = (result.link || result.displayed_link || '')\n      .replace(/^https?:\\/\\//, '')\n      .replace(/^www\\./, '')\n      .toLowerCase();\n\n    if (resultLink.startsWith(cleanDomain)) {\n      rank = result.position || (i + 1);\n      rankingUrl = result.link || '';\n      rankingTitle = result.title || '';\n      break;\n    }\n  }\n\n  let tier = 'Not Ranked';\n  if (rank !== null) {\n    if (rank <= 3) tier = 'Top 3';\n    else if (rank <= 10) tier = 'Top 10';\n    else if (rank <= 20) tier = 'Top 20';\n    else if (rank <= 50) tier = 'Top 50';\n    else tier = 'Top 100';\n  }\n\n  results.push({\n    json: {\n      client_id,\n      client_name,\n      domain,\n      keyword,\n      country,\n      engine,\n      rank,\n      tier,\n      ranking_url: rankingUrl,\n      ranking_title: rankingTitle,\n      checked_at: new Date().toISOString()\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "094c6f41-89e0-410c-b8a3-350a4b8fec37",
+      "name": "Extract rank from response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO rankings (client_id, keyword, rank, checked_at)\nVALUES (\n  {{ $json.client_id }},\n  '{{ $json.keyword }}',\n  {{ $json.rank !== null ? $json.rank : 'NULL' }},\n  CURRENT_DATE\n)\nON CONFLICT (client_id, keyword, checked_at)\nDO UPDATE SET rank = EXCLUDED.rank\nRETURNING id, client_id, keyword, rank, checked_at;",
+        "options": {}
+      },
+      "id": "1a4cbb33-126b-4baf-9d4d-1b3564826d35",
+      "name": "Postgres — INSERT ranking",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        352
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TX6iPl5TooFkpyYl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "download-excel",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b5bd378e-98d9-47e3-9edb-7dfce9393dd0",
+      "name": "Webhook — GET /download-excel",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        560,
+        576
+      ],
+      "webhookId": "download-excel"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  c.client_name  AS \"Client\",\n  c.domain       AS \"Domain\",\n  r.keyword      AS \"Keyword\",\n  r.rank         AS \"Rank\",\n  r.checked_at   AS \"Date\"\nFROM rankings r\nJOIN clients c ON c.id = r.client_id\nORDER BY c.client_name, r.keyword, r.checked_at DESC;",
+        "options": {}
+      },
+      "id": "8e1a642a-75c6-4c67-a32e-1d88498e4639",
+      "name": "Postgres — fetch all rankings",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        784,
+        576
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TX6iPl5TooFkpyYl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
+        "options": {
+          "fileName": "ranktracker-export.xlsx",
+          "sheetName": "Rankings"
+        }
+      },
+      "id": "e0324b31-7182-4938-8a01-d70b229eb0f7",
+      "name": "Convert to Excel (.xlsx)",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              },
+              {
+                "name": "Content-Disposition",
+                "value": "attachment; filename=\"ranktracker-export.xlsx\""
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "0a302f10-8ff8-4393-8019-1764b14d1a7a",
+      "name": "Respond with Excel file",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 204,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "e51d500a-8757-45a8-b46b-e81a72e4ce8e",
+      "name": "Respond OPTIONS with CORS headers",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "path": "rankings",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "8fb94771-aff0-4a39-be3d-034519960e42",
+      "name": "Webhook — GET /rankings",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        560,
+        800
+      ],
+      "webhookId": "c0b31d4b-f5d4-4f6b-8ffe-662f7ec6805b"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.client_name, c.domain, r.keyword, r.rank, r.checked_at FROM rankings r JOIN clients c ON c.id = r.client_id ORDER BY r.checked_at DESC, c.client_name, r.keyword LIMIT 1000",
+        "options": {}
+      },
+      "id": "6013543f-30a0-4190-a2b4-d50e1bb10847",
+      "name": "Fetch rankings with client info",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        784,
+        800
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TX6iPl5TooFkpyYl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        992,
+        800
+      ],
+      "id": "8e689f27-3d99-4d5c-b3f0-45b6bb772d75",
+      "name": "Respond to Webhook1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.headers['access-control-request-method'] }}",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6b14e6e4-27f9-4ad3-945f-3f9f0d1fe5ae",
+      "name": "Check if OPTIONS request",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        784,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  c.client_name  AS \"Client\",\n  c.domain       AS \"Domain\",\n  r.keyword      AS \"Keyword\",\n  r.rank         AS \"Rank\",\n  r.checked_at   AS \"Date\"\nFROM rankings r\nJOIN clients c ON c.id = r.client_id\nORDER BY c.client_name, r.keyword, r.checked_at DESC;",
+        "options": {}
+      },
+      "id": "a7caf668-d35f-464c-ac6c-d0526e27548a",
+      "name": "Postgres — fetch all rankings1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        352
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "TX6iPl5TooFkpyYl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
+        "options": {
+          "fileName": "ranktracker-export.xlsx",
+          "sheetName": "Rankings"
+        }
+      },
+      "id": "b08e4066-2bc1-4c62-b740-13a9506d138d",
+      "name": "Convert to Excel (.xlsx)1",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 2,
+      "position": [
+        2320,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "=omkarg@gmail.com",
+        "subject": "SEO Rank Check Complete",
+        "emailType": "text",
+        "message": "Rank tracker",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "id": "f0dc6903-8d71-49b5-a9bd-29320a610714",
+      "name": "Email Notification (Neelam)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2512,
+        352
+      ],
+      "webhookId": "23190cd2-133e-4914-bb50-8ea48e7dc509",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YM0uCyQEOUOySCeU",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input rows from Postgres\nconst rows = items.map(item => item.json);\n\n// Get all unique dates\nconst allDates = [...new Set(\n  rows.map(r => {\n    return new Date(r.Date).toISOString().split('T')[0];\n  })\n)].sort();\n\nconst grouped = {};\n\n// Group by Client + Keyword\nfor (const row of rows) {\n\n  const client = row.Client;\n  const domain = row.Domain;\n  const keyword = row.Keyword;\n\n  const date = new Date(row.Date)\n    .toISOString()\n    .split('T')[0];\n\n  const rank = row.Rank;\n\n  const key = client + '|' + keyword;\n\n  if (!grouped[key]) {\n\n    grouped[key] = {\n      Client: client,\n      Domain: domain,\n      Keyword: keyword\n    };\n\n    // initialize all date columns blank\n    allDates.forEach(d => {\n      grouped[key][d] = \"\";\n    });\n\n  }\n\n  // put rank under matching date column\n  grouped[key][date] = rank;\n}\n\n\n// Convert back to n8n format\nreturn Object.values(grouped).map(row => ({\n  json: row\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        352
+      ],
+      "id": "6711cb9b-9223-4c02-a3ae-10c05500e4db",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "purnimag.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+            "content-length": "162",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "219.74.97.79",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9ed96a40ef85fd83-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "origin": "null",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"macOS\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "219.74.97.79, 172.70.208.113",
+            "x-forwarded-host": "purnimag.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-84-7f76b9856b-hn5gv",
+            "x-is-trusted": "yes",
+            "x-real-ip": "219.74.97.79"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "client_name": "Visual Production Agency",
+            "domain": "https://vpagency.com.au/",
+            "keywords": "melbourne government video production",
+            "country": "AU",
+            "engine": "google"
+          },
+          "webhookUrl": "https://purnimag.app.n8n.cloud/webhook/add-client",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check if OPTIONS request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Format": {
+      "main": [
+        [
+          {
+            "node": "Postgres — INSERT client",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres — INSERT client": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every day at 07:00": {
+      "main": [
+        [
+          {
+            "node": "Fetch all active clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch all active clients": {
+      "main": [
+        [
+          {
+            "node": "Split into one item per keyword",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split into one item per keyword": {
+      "main": [
+        [
+          {
+            "node": "DataForSEO — fetch SERP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DataForSEO — fetch SERP": {
+      "main": [
+        [
+          {
+            "node": "Extract rank from response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract rank from response": {
+      "main": [
+        [
+          {
+            "node": "Postgres — INSERT ranking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres — INSERT ranking": {
+      "main": [
+        [
+          {
+            "node": "Postgres — fetch all rankings1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — GET /download-excel": {
+      "main": [
+        [
+          {
+            "node": "Postgres — fetch all rankings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres — fetch all rankings": {
+      "main": [
+        [
+          {
+            "node": "Convert to Excel (.xlsx)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Excel (.xlsx)": {
+      "main": [
+        [
+          {
+            "node": "Respond with Excel file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook — GET /rankings": {
+      "main": [
+        [
+          {
+            "node": "Fetch rankings with client info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch rankings with client info": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if OPTIONS request": {
+      "main": [
+        [
+          {
+            "node": "Respond OPTIONS with CORS headers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validate & Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres — fetch all rankings1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to Excel (.xlsx)1": {
+      "main": [
+        [
+          {
+            "node": "Email Notification (Neelam)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Convert to Excel (.xlsx)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "be189ef1-5e64-49fe-a1ca-3631f18539fb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9bd53f5ccebeb8cfab684616148a1f2e235e5c56d5eae389067aa97ff1b343ba"
+  },
+  "id": "lfGQuSLPyqEW6tTM",
+  "tags": []
+}
